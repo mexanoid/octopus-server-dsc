@@ -1,0 +1,254 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2014-04-01-preview/deploymentTemplate.json",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmAdminUsername": {
+            "type": "string",
+            "metadata": {
+                "description": "Admin username for the Virtual Machine."
+            }
+        },
+        "vmAdminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Admin password for the Virtual Machine."
+            }
+        },
+        "vmDnsName": {
+            "type": "string",
+            "metadata": {
+                "description": "Unique DNS Name for the Public IP used to access the Virtual Machine."
+            }
+        },
+        "vmSize": {
+            "defaultValue": "Standard_B2ms",
+            "type": "string",
+            "metadata": {
+                "description": "Size of the Virtual Machine"
+            }
+        },
+        "existingStorageAccountName": {
+            "defaultValue": "infrastorm",
+            "type": "string",
+            "metadata": {
+                "description": "Existing Storage account name"
+            }
+        },
+        "existingSubNetName": {
+            "defaultValue": "infra-subnet",
+            "type": "string",
+            "metadata": {
+                "description": "Existing subnet"
+            }
+        },
+        "existingVNetName": {
+            "defaultValue": "infra-vnet",
+            "type": "string",
+            "metadata": {
+                "description": "Existing vnet"
+            }
+        },
+        "existingNsgName": {
+            "defaultValue": "infra-nsg",
+            "type": "string",
+            "metadata": {
+                "description": "Existing nsg"
+            }
+        },
+        "existingNetworkRgName": {
+            "defaultValue": "network",
+            "type": "string",
+            "metadata": {
+                "description": "Existing Network Rg name"
+            }
+        },
+        "octopusAdminUsername": {
+            "type": "string",
+            "metadata": {
+                "description": "Octopus server user administrator user name"
+            }
+        },
+        "octopusAdminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Octopus server user administrator user password"
+            }
+        },
+        "octopusWebListenPrefix": {
+            "defaultValue": "http://localhost:80",
+            "type": "string",
+            "metadata": {
+                "description": "Web Listen Prefix"
+            }
+        },
+        "_artifactsLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+            }
+        },
+        "_artifactsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Auto-generated token to access _artifactsLocation"
+            }
+        }
+    },
+    "variables": {
+        "namespace": "octo-srv",
+        "location": "[resourceGroup().location]",
+        "tags": {
+            "vendor": "Octopus Server",
+            "description": "Deployment of Octopus Server to an Azure VM."
+        },
+        "publicIPAddressName": "[concat(variables('namespace'), '-public-ip')]",
+        "nic": {
+            "name": "[concat(variables('namespace'), '-nic')]",
+            "ipConfigName": "[concat(variables('namespace'), '-ip-config')]"
+        },
+        "vmName": "[concat(variables('namespace'),'-vm')]",        
+        "dscArchiveFileName": "octopus.zip",
+        "sqlIsoFileName": "en_sql_server_2017_developer_x64_dvd_11296168.iso"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[variables('publicIPAddressName')]",
+            "apiVersion": "2016-03-30",
+            "location": "[variables('location')]",
+            "tags": {
+                "vendor": "[variables('tags').vendor]",
+                "description": "[variables('tags').description]"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('vmDnsName')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[variables('nic').name]",
+            "apiVersion": "2016-03-30",
+            "location": "[variables('location')]",
+            "tags": {
+                "vendor": "[variables('tags').vendor]",
+                "description": "[variables('tags').description]"
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]"
+            ],
+            "properties": {
+                "networkSecurityGroup": {
+                    "id": "[resourceId(parameters('existingNetworkRgName'), 'Microsoft.Network/networkSecurityGroups', parameters('existingNsgName'))]"
+                },
+                "ipConfigurations": [
+                    {
+                        "name": "[variables('nic').ipConfigName]",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId(parameters('existingNetworkRgName'), 'Microsoft.Network/virtualNetworks/subnets', parameters('existingVNetName'), parameters('existingSubNetName'))]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[variables('vmName')]",
+            "apiVersion": "2016-04-30-preview",
+            "location": "[variables('location')]",
+            "tags": {
+                "vendor": "[variables('tags').vendor]",
+                "description": "[variables('tags').description]"
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', variables('nic').name)]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('vmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[variables('vmName')]",
+                    "adminUsername": "[parameters('vmAdminUsername')]",
+                    "adminPassword": "[parameters('vmAdminPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2016-Datacenter",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "createOption": "FromImage",
+                        "caching": "ReadWrite",
+                        "managedDisk": {
+                            "storageAccountType": "Standard_LRS"
+                        }
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nic').name)]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true,
+                        "storageUri": "[concat('http://', parameters('existingStorageAccountName'), '.blob.core.windows.net')]"
+                    }
+                }
+            },
+            "resources": [
+                {
+                    "name": "octo-dsc",
+                    "type": "extensions",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2016-03-30",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+                    ],
+                    "tags": {
+                        "displayName": "octo-dsc"
+                    },
+                    "properties": {
+                        "publisher": "Microsoft.Powershell",
+                        "type": "DSC",
+                        "typeHandlerVersion": "2.9",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "wmfVersion": "latest",
+                            "configuration": {
+                                "url": "[concat(parameters('_artifactsLocation'), '/', variables('dscArchiveFileName'), parameters('_artifactsLocationSasToken'))]",
+                                "script": "octopus.ps1",
+                                "function": "Main"
+                            },
+                            "configurationArguments": {
+                                "OctopusWebListenPrefix": "[parameters('octopusWebListenPrefix')]",
+                                "ResourcesPackage": "[concat(parameters('_artifactsLocation'), '/', variables('sqlIsoFileName'), parameters('_artifactsLocationSasToken'))]"
+                            }
+                        },
+                        "protectedSettings": {
+                            "configurationArguments": {
+                                "OctopusAdminCredential": {
+                                    "userName": "[parameters('octopusAdminUsername')]",
+                                    "password": "[parameters('octopusAdminPassword')]"
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

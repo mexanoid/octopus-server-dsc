@@ -1,0 +1,42 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmAdminUsername": {
+            "value": "AdminUser"
+        },
+        "vmAdminPassword": {
+            "value": "MySuperSecretPassw0rd"
+        },
+        "vmDnsName": {
+            "value": "octo-vm"
+        },
+        "vmSize": {
+            "value": "Standard_B2ms"
+        },
+        "existingStorageAccountName": {
+            "value": "infrastorm"
+        },        
+        "existingNetworkRgName": {
+            "value": "network"
+        },
+        "existingNsgName": {
+            "value": "infra-nsg"
+        },
+        "existingSubNetName": {
+            "value": "infra-subnet"
+        },
+        "existingVNetName": {
+            "value": "infra-vnet"
+        },
+        "octopusAdminUsername": {
+            "value": "AdminUser"
+        },
+        "octopusAdminPassword": {
+            "value": "MySuperSecretPassw0rd"
+        },
+        "octopusWebListenPrefix": {
+            "value": "http://localhost:80"
+        }
+    }
+}
