@@ -106,7 +106,7 @@
             "name": "[concat(variables('namespace'), '-nic')]",
             "ipConfigName": "[concat(variables('namespace'), '-ip-config')]"
         },
-        "vmName": "[concat(variables('namespace'),'-vm')]",        
+        "vmName": "[concat(variables('namespace'),'-vm')]",
         "dscArchiveFileName": "octopus.zip",
         "sqlIsoFileName": "en_sql_server_2017_developer_x64_dvd_11296168.iso"
     },

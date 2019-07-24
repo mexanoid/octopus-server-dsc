@@ -25,7 +25,7 @@
             "apiVersion": "2016-03-30",
             "name": "[variables('networkSecurityGroupName')]",
             "location": "[variables('location')]",
-            "tags": {                
+            "tags": {
                 "description": "[variables('tags').description]"
             },
             "properties": {
@@ -94,7 +94,7 @@
             "name": "[variables('vnet').name]",
             "apiVersion": "2016-03-30",
             "location": "[variables('location')]",
-            "tags": {                
+            "tags": {
                 "description": "[variables('tags').description]"
             },
             "dependsOn": [

@@ -16,7 +16,7 @@
         },
         "existingStorageAccountName": {
             "value": "infrastorm"
-        },        
+        },
         "existingNetworkRgName": {
             "value": "network"
         },

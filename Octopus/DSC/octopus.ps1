@@ -1,6 +1,6 @@
 configuration Main
 {
-    param (        
+    param (
         [Parameter(Mandatory=$true)]
         [ValidateNotNullorEmpty()]
         [PSCredential]
@@ -14,12 +14,12 @@ configuration Main
         [String]
         $ResourcesPackage
         )
-    
+
     Import-DscResource -ModuleName xPSDesiredStateConfiguration
     Import-DscResource -ModuleName PSDesiredStateConfiguration
-    Import-DscResource -ModuleName OctopusDSC 
+    Import-DscResource -ModuleName OctopusDSC
     Import-DscResource -ModuleName SqlServerDsc
-    Import-DscResource -ModuleName StorageDsc    
+    Import-DscResource -ModuleName StorageDsc
     Import-DSCResource -ModuleName NetworkingDsc
 
     Node "localhost"
@@ -36,7 +36,7 @@ configuration Main
             DestinationPath = "C:\InstallMedia\en_sql_server_2017_developer_x64_dvd_11296168.iso"
             MatchSource = $true
             DependsOn   = '[File]CreateInstallMediaDir'
-        }        
+        }
 
         MountImage MountISO
         {
@@ -44,7 +44,7 @@ configuration Main
             DriveLetter = 'S'
             DependsOn   = '[xRemoteFile]DownloadSqlISO'
         }
-        
+
         WaitForVolume WaitForISO
         {
             DriveLetter      = 'S'
@@ -64,28 +64,28 @@ configuration Main
             Action                 = "Install"
             SourcePath             = 'S:\'
             InstanceName           = 'MSSQLSERVER'
-            Features               = 'SQLENGINE'                     
+            Features               = 'SQLENGINE'
             SQLSysAdminAccounts    = @('Administrators')
             UpdateEnabled          = 'False'
-            ForceReboot            = $false            
+            ForceReboot            = $false
             DependsOn              = '[WindowsFeature]NetFramework45', '[WaitForVolume]WaitForISO', '[MountImage]MountISO', '[xRemoteFile]DownloadSqlISO', '[File]CreateInstallMediaDir'
-        }        
+        }
 
         cOctopusServer OctopusServer
         {
-            Ensure = "Present"            
+            Ensure = "Present"
             State = "Started"
-            Name = "OctopusServer"            
-            DownloadUrl = "https://octopus.com/downloads/latest/WindowsX64/OctopusServer"            
+            Name = "OctopusServer"
+            DownloadUrl = "https://octopus.com/downloads/latest/WindowsX64/OctopusServer"
             SqlDbConnectionString = "Data Source=(local);Initial Catalog=Octopus;Integrated Security=True;"
             OctopusAdminCredential = $OctopusAdminCredential
-            HomeDirectory = "C:\Octopus"            
+            HomeDirectory = "C:\Octopus"
             ForceSSL = $false
             ListenPort = 10943
-            WebListenPrefix = $OctopusWebListenPrefix            
+            WebListenPrefix = $OctopusWebListenPrefix
             TaskCap = 10
             DependsOn = '[SqlSetup]InstallDefaultInstance', '[WindowsFeature]NetFramework45'
-        }        
+        }
 
         cOctopusServerGuestAuthentication "Enable Guest Authentication"
         {
@@ -106,7 +106,6 @@ configuration Main
             Name = 'IIS-WebServerRole-HTTP-In-TCP'
             Ensure  = 'Present'
             Enabled = 'True'
-            LocalPort = ('80')
             DependsOn = '[cOctopusServer]OctopusServer'
         }
 
@@ -115,7 +114,6 @@ configuration Main
             Name = 'IIS-WebServerRole-HTTPS-In-TCP'
             Ensure = 'Present'
             Enabled = 'True'
-            LocalPort = ('443')
             DependsOn = '[cOctopusServer]OctopusServer'
         }
     }
